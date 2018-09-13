@@ -38,6 +38,7 @@ from website.project.model import has_anonymous_link, NodeUpdateError, validate_
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
 from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation
+from addons.wiki.models import WikiPage
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
@@ -49,6 +50,7 @@ from website.profile import utils
 from addons.mendeley.provider import MendeleyCitationsProvider
 from addons.zotero.provider import ZoteroCitationsProvider
 from addons.wiki.utils import serialize_wiki_widget
+from addons.wiki.models import WikiVersion
 from addons.dataverse.utils import serialize_dataverse_widget
 from addons.forward.utils import serialize_forward_widget
 
@@ -270,7 +272,7 @@ def node_setting(auth, node, **kwargs):
     auth.user.save()
     ret = _view_project(node, auth, primary=True)
 
-    ret['include_wiki_settings'] = node.include_wiki_settings(auth.user)
+    ret['include_wiki_settings'] = WikiPage.objects.include_wiki_settings(node)
     ret['wiki_enabled'] = 'wiki' in node.get_addon_names()
 
     ret['comments'] = {
@@ -656,7 +658,7 @@ def _render_addons(addons):
 
 def _should_show_wiki_widget(node, contributor):
     has_wiki = bool(node.get_addon('wiki'))
-    wiki_page = node.get_wiki_version('home', None)
+    wiki_page = WikiVersion.objects.get_for_node(node, 'home')
 
     if contributor and contributor.write and not node.is_registration:
         return has_wiki
