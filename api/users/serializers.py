@@ -9,7 +9,7 @@ from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
     VersionedDateTimeField, HideIfDisabled, IDField,
     Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
-    WaterbutlerLink, ShowIfCurrentUser
+    WaterbutlerLink, ShowIfCurrentUser,
 )
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated
 from api.files.serializers import QuickFilesSerializer
@@ -29,11 +29,11 @@ class QuickFilesRelationshipField(RelationshipField):
         upload_url = waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
         relationship_links['links']['upload'] = {
             'href': upload_url,
-            'meta': {}
+            'meta': {},
         }
         relationship_links['links']['download'] = {
             'href': '{}?zip='.format(upload_url),
-            'meta': {}
+            'meta': {},
         }
         return relationship_links
 
@@ -65,7 +65,7 @@ class UserSerializer(JSONAPISerializer):
         'given_name',
         'middle_names',
         'family_name',
-        'id'
+        'id',
     ])
     writeable_method_fields = frozenset([
         'accepted_terms_of_service',
@@ -92,7 +92,7 @@ class UserSerializer(JSONAPISerializer):
         {
             'html': 'absolute_url',
             'profile_image': 'profile_image_url',
-        }
+        },
     ))
 
     nodes = HideIfDisabled(RelationshipField(
@@ -126,7 +126,7 @@ class UserSerializer(JSONAPISerializer):
     default_region = ShowIfCurrentUser(RelationshipField(
         related_view='regions:region-detail',
         related_view_kwargs={'region_id': 'get_default_region_id'},
-        read_only=True
+        read_only=True,
     ))
 
     class Meta:
@@ -144,10 +144,12 @@ class UserSerializer(JSONAPISerializer):
         return None
 
     def get_absolute_url(self, obj):
-        return absolute_reverse('users:user-detail', kwargs={
-            'user_id': obj._id,
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
+        return absolute_reverse(
+            'users:user-detail', kwargs={
+                'user_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def get_can_view_reviews(self, obj):
         group_qs = AbstractProviderGroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
@@ -215,7 +217,7 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
 
     links = LinksField({
         'self': 'get_absolute_url',
-        'accounts': 'account_links'
+        'accounts': 'account_links',
     })
 
     class Meta:
@@ -227,8 +229,8 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
             kwargs={
                 'provider': obj.config.short_name,
                 'user_id': self.context['request'].parser_context['kwargs']['user_id'],
-                'version': self.context['request'].parser_context['kwargs']['version']
-            }
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
         )
 
     def account_links(self, obj):
@@ -236,13 +238,15 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
         if hasattr(obj, 'external_accounts'):
             return {
                 account._id: {
-                    'account': absolute_reverse('users:user-external_account-detail', kwargs={
-                        'user_id': obj.owner._id,
-                        'provider': obj.config.short_name,
-                        'account_id': account._id,
-                        'version': self.context['request'].parser_context['kwargs']['version']
-                    }),
-                    'nodes_connected': [n.absolute_api_v2_url for n in obj.get_attached_nodes(account)]
+                    'account': absolute_reverse(
+                        'users:user-external_account-detail', kwargs={
+                            'user_id': obj.owner._id,
+                            'provider': obj.config.short_name,
+                            'account_id': account._id,
+                            'version': self.context['request'].parser_context['kwargs']['version'],
+                        },
+                    ),
+                    'nodes_connected': [n.absolute_api_v2_url for n in obj.get_attached_nodes(account)],
                 }
                 for account in obj.external_accounts.all()
             }
@@ -282,20 +286,26 @@ class RelatedInstitution(JSONAPIRelationshipSerializer):
 class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
 
     data = ser.ListField(child=RelatedInstitution())
-    links = LinksField({'self': 'get_self_url',
-                        'html': 'get_related_url'})
+    links = LinksField({
+        'self': 'get_self_url',
+        'html': 'get_related_url',
+    })
 
     def get_self_url(self, obj):
-        return absolute_reverse('users:user-institutions-relationship', kwargs={
-            'user_id': obj['self']._id,
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
+        return absolute_reverse(
+            'users:user-institutions-relationship', kwargs={
+                'user_id': obj['self']._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def get_related_url(self, obj):
-        return absolute_reverse('users:user-institutions', kwargs={
-            'user_id': obj['self']._id,
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
+        return absolute_reverse(
+            'users:user-institutions', kwargs={
+                'user_id': obj['self']._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url
@@ -320,8 +330,8 @@ class UserIdentitiesSerializer(JSONAPISerializer):
             kwargs={
                 'user_id': self.context['request'].parser_context['kwargs']['user_id'],
                 'version': self.context['request'].parser_context['kwargs']['version'],
-                'identity_id': obj['_id']
-            }
+                'identity_id': obj['_id'],
+            },
         )
 
     class Meta:
@@ -362,7 +372,7 @@ class UserSettingsSerializer(JSONAPISerializer):
         return obj.osf_mailing_lists.get(OSF_HELP_LIST, False)
 
     links = LinksField({
-        'self': 'get_absolute_url'
+        'self': 'get_absolute_url',
     })
 
     def get_absolute_url(self, obj):
@@ -370,8 +380,8 @@ class UserSettingsSerializer(JSONAPISerializer):
             'users:user_settings',
             kwargs={
                 'user_id': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version']
-            }
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
         )
 
     class Meta:
